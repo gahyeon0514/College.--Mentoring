@@ -209,7 +209,9 @@
                 episode: "episode_1",
                 background: "cafe_interior",
                 dialogues: [
-                    { speaker: "god_cafe_owner", expression: "default", text: "그렇단다. 마침내 이 문을 열고 들어와" }
+                    { speaker: "god_cafe_owner", expression: "default", text: "그렇단다. 손님은 제법 찾아왔지만, 직원으로 일해보겠다고 찾아온 사람은 처음이구나." },
+
+                    { speaker: "god_cafe_owner", expression: "default", text: "그렇다고 벌써부터 자네를 직원으로 받아들였다는 뜻은 아니란다. 우선 이야기를 좀 나눠보자꾸나." },
                 ],
                 nextScene: "ending_first_step"
             },
@@ -217,7 +219,9 @@
                 episode: "episode_1",
                 background: "cafe_interior",
                 dialogues: [
-                    { speaker: "god_cafe_owner", expression: "smile", text: "하하, 성급하긴. 하지만 그 패기는 마음에 드는군요." }
+                    { speaker: "god_cafe_owner", expression: "default", text: "허허, 일할 생각으로 찾아온 모양이구나." },
+
+                    { speaker: "god_cafe_owner", expression: "default", text: "좋다. 그렇다면 찾아온 용기는 충분히 확인했으니, 이제 정말 이곳에서 일할 수 있는 사람인지 알아보도록 하겠단다." },
                 ],
                 nextScene: "ending_first_step"
             }
@@ -257,7 +261,7 @@
         function handleLogin() {
             const input = document.getElementById("username-input").value.trim();
             if (!input) {
-                showToast("플레이어 이름을 입력해주세요.");
+                showToast("이름을 입력해주세요.");
                 return;
             }
             currentUser = input;
