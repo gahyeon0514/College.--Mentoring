@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비주얼 노벨 프레임워크 (Visual Novel Engine)</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Nanum Gothic -->
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            user-select: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-white h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+
+    <!-- 전체 앱 컨테이너 -->
+    <div id="app" class="relative w-full max-w-5xl h-[700px] bg-black shadow-2xl overflow-hidden flex flex-col border border-gray-800 rounded-xl">
+
+        <!-- 1. 로그인 화면 (Login Screen) -->
+        <div id="login-screen" class="absolute inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center p-6">
+            <div class="bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-md border border-gray-700 text-center">
+                <h1 class="text-2xl font-bold mb-2 text-indigo-400">비주얼 노벨 시스템</h1>
+                <p class="text-sm text-gray-400 mb-6">플레이어 계정을 입력하여 진행 상황을 분리하여 저장하세요.</p>
+                <input type="text" id="username-input" placeholder="플레이어 닉네임 또는 ID 입력" class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg mb-4 text-white focus:outline-none focus:border-indigo-500">
+                <button onclick="handleLogin()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-lg">게임 시작 / 이어하기</button>
+            </div>
+        </div>
+
+        <!-- 2. 메인 타이틀 화면 (Title Screen) -->
+        <div id="title-screen" class="absolute inset-0 bg-cover bg-center z-40 flex flex-col justify-between p-12 bg-gray-900 hidden" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://placehold.co/1200x800/111827/4b5563?text=Caf%C3%A9+Background');">
+            <div class="mt-12">
+                <span id="current-user-badge" class="px-3 py-1 bg-indigo-900 text-indigo-200 text-xs rounded-full font-semibold">계정: 없음</span>
+                <h1 id="game-title" class="text-5xl font-extrabold text-white mt-4 tracking-wider drop-shadow-md">카페: 신의 휴식처</h1>
+                <p id="game-subtitle" class="text-gray-300 mt-2 text-lg">데이터 주도형 비주얼 노벨 프레임워크</p>
+            </div>
+            <div class="flex flex-col gap-3 w-64 mb-12">
+                <button onclick="startGame()" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg transition text-left px-6">처음부터 시작</button>
+                <button onclick="openLoadModal()" class="py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-lg shadow-lg transition text-left px-6">이어하기 / 불러오기</button>
+                <button onclick="openEndingGallery()" class="py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-lg shadow-lg transition text-left px-6">엔딩 갤러리</button>
+                <button onclick="openSettingsModal()" class="py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-lg shadow-lg transition text-left px-6">설정</button>
+            </div>
+        </div>
+
+        <!-- 3. 게임 플레이 화면 (Game Play Screen) -->
+        <div id="game-screen" class="absolute inset-0 flex flex-col justify-between hidden bg-cover bg-center transition-all duration-700" style="background-image: url('https://placehold.co/1200x800/1a202c/4a5568?text=Background');">
+            
+            <!-- 상단 메뉴 및 에피소드 정보 바 -->
+            <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent z-20">
+                <div>
+                    <span id="ui-episode-name" class="text-xs bg-indigo-600 px-2.5 py-1 rounded-md text-white font-bold uppercase tracking-wider">프롤로그</span>
+                    <span id="ui-scene-id" class="text-xs text-gray-400 ml-2">scene_01</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleAutoPlay()" id="auto-btn" class="px-3 py-1.5 bg-black/50 hover:bg-black/70 text-xs rounded-lg border border-white/20 transition">자동: 꺼짐</button>
+                    <button onclick="openSaveModal()" class="px-3 py-1.5 bg-black/50 hover:bg-black/70 text-xs rounded-lg border border-white/20 transition">저장</button>
+                    <button onclick="openLoadModal()" class="px-3 py-1.5 bg-black/50 hover:bg-black/70 text-xs rounded-lg border border-white/20 transition">불러오기</button>
+                    <button onclick="openLogModal()" class="px-3 py-1.5 bg-black/50 hover:bg-black/70 text-xs rounded-lg border border-white/20 transition">로그</button>
+                    <button onclick="openSettingsModal()" class="px-3 py-1.5 bg-black/50 hover:bg-black/70 text-xs rounded-lg border border-white/20 transition">설정</button>
+                    <button onclick="returnToTitle()" class="px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-xs rounded-lg border border-red-500/30 transition">메인으로</button>
+                </div>
+            </div>
+
+            <!-- 중앙 캐릭터 영역 -->
+            <div class="relative flex-1 flex justify-center items-end px-12 pb-4 overflow-hidden pointer-events-none z-10">
+                <div id="character-container" class="flex justify-center items-end gap-8 w-full h-full">
+                    <!-- 캐릭터 동적 삽입 위치 -->
+                </div>
+            </div>
+
+            <!-- 선택지 영역 -->
+            <div id="choices-container" class="absolute inset-0 bg-black/60 z-30 flex flex-col items-center justify-center gap-4 p-8 hidden">
+                <!-- 선택지 버튼 동적 삽입 위치 -->
+            </div>
+
+            <!-- 하단 대사창 영역 -->
+            <div class="relative z-25 p-6 bg-gradient-to-t from-black via-black/90 to-transparent pt-16">
+                <div onclick="handleNextClick()" class="max-w-4xl mx-auto bg-gray-900/90 border border-gray-700 rounded-xl p-6 shadow-2xl cursor-pointer min-h-[140px] flex flex-col justify-between backdrop-blur-sm relative fade-in">
+                    <!-- 화자 이름표 -->
+                    <div class="absolute -top-4 left-6 bg-indigo-600 text-white px-4 py-1 rounded-md text-sm font-bold shadow-md" id="speaker-name">
+                        내용
+                    </div>
+                    <!-- 대사 텍스트 -->
+                    <div class="text-gray-100 text-lg leading-relaxed mt-2" id="dialogue-text">
+                        여기에 대사가 출력됩니다. 다음 대사 버튼을 누르거나 화면을 클릭하세요.
+                    </div>
+                    <!-- 클릭 안내 인디케이터 -->
+                    <div class="flex justify-end items-center mt-2 text-xs text-gray-400">
+                        <span class="animate-pulse">▼ 클릭하여 계속</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 모달창 시스템 (저장/불러오기/로그/설정/엔딩갤러리) -->
+        <div id="modal-overlay" class="absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-6 hidden">
+            <div id="modal-content" class="bg-gray-900 border border-gray-700 w-full max-w-2xl rounded-xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+                <!-- 동적 폼 -->
+            </div>
+        </div>
+
+        <!-- 알림 메시지 박스 -->
+        <div id="message-box" class="absolute top-6 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-2xl z-60 transition-all duration-300 opacity-0 pointer-events-none">
+            알림 메시지입니다.
+        </div>
+
+    </div>
+
+    <script>
+        /* ==========================================================================
+           [콘텐츠 데이터 관리 영역] 
+           ========================================================================== */
+
+        const EPISODES = {
+            "prologue": { id: "prologue", name: "프롤로그: 전단지와 빛", startScene: "scene_prologue_1" },
+            "episode_1": { id: "episode_1", name: "에피소드 1: 카페의 문을 열며", startScene: "scene_cafe_enter" }
+        };
+
+        const BACKGROUNDS = {
+            "street_pole": "https://placehold.co/1200x800/1e293b/94a3b8?text=Street+-+Pole+with+Flyer",
+            "street_night": "https://placehold.co/1200x800/0f172a/64748b?text=Street+-+Crossroad+Light",
+            "cafe_interior": "https://placehold.co/1200x800/1a202c/cbd5e0?text=Cafe+Interior"
+        };
+
+        const CHARACTERS = {
+            "narrator": {
+                name: "독백 / 해설",
+                expressions: { default: "" },
+                position: "none"
+            },
+            "protagonist": {
+                name: "주인공",
+                expressions: {
+                    default: "https://placehold.co/300x600/3b82f6/ffffff?text=Protagonist",
+                    surprised: "https://placehold.co/300x600/2563eb/ffffff?text=Protagonist+(Surprised)"
+                },
+                position: "left"
+            },
+            "god_cafe_owner": {
+                name: "카페 주인 (신)",
+                expressions: {
+                    default: "https://placehold.co/300x600/8b5cf6/ffffff?text=God+Owner",
+                    smile: "https://placehold.co/300x600/7c3aed/ffffff?text=God+Owner+(Smile)"
+                },
+                position: "right"
+            }
+        };
+
+        // 전체 확장된 면접 및 의도 확인 씬 구조 데이터
+        const SCENES = {
+            "scene_prologue_1": {
+                episode: "prologue",
+                background: "street_pole",
+                dialogues: [
+                    { speaker: "narrator", expression: "default", text: "난 어느 길목의 전봇대에 붙어 있는 구인 전단지 하나를 보았다." },
+                    { speaker: "narrator", expression: "default", text: "비에도, 바람에도 거뜬히 버틴 녀석은 금방이라도 찢어질 듯 낡아 있었다." },
+                    { speaker: "narrator", expression: "default", text: "‘모든 고민을 해결해주는 작은 카페, 직원 급구!’" },
+                    { speaker: "narrator", expression: "default", text: "가게 이름도, 연락처도, 그 흔한 구인 조건조차 없었다. 딱, 그 한 문장뿐이었다." },
+                    { speaker: "narrator", expression: "default", text: "이상한 전단지였다." },
+                    { speaker: "narrator", expression: "default", text: "그런데도 며칠이고, 몇 날이고 그 자리에 붙어 있었다." },
+                    { speaker: "narrator", expression: "default", text: "비가 내린 뒤에도, 바람이 세차게 불고 난 뒤에도 사라지지 않았다." },
+                    { speaker: "narrator", expression: "default", text: "나는 문득문득 그 전단지를 떠올리곤 했다." },
+                    { speaker: "narrator", expression: "default", text: "대체 어떤 카페이기에, ‘모든 고민을 해결해준다’는 말을 이렇게 당당하게 적어놓은 걸까." },
+                    { speaker: "narrator", expression: "default", text: "그 생각이 들 때마다, 이상하게도 조금씩 호기심이 생겼다." }
+                ],
+                nextScene: "scene_prologue_2"
+            },
+            "scene_prologue_2": {
+                episode: "prologue",
+                background: "street_night",
+                dialogues: [
+                    { speaker: "narrator", expression: "default", text: "어느날은 문득 호기심이 들었다. 혹시 전단지의 뒷면에 무언가 남아 있지는 않을까?" },
+                    { speaker: "narrator", expression: "default", text: "나는 전단지를 벽에서 떼어냈다. 그리고 그 순간이었다." },
+                    { speaker: "narrator", expression: "default", text: "건널목 건너편, 작은 가게 하나가 눈에 들어왔다." },
+                    { speaker: "narrator", expression: "default", text: "따뜻한 햇볕을 그대로 옮겨놓은 듯한 빛이 가게 안에서 흘러나오고 있었다." },
+                    { speaker: "narrator", expression: "default", text: "내가 지금껏 눈치채지 못했다기에는, 그 빛은 지나치게 선명했다. 마치 전단지를 떼어내는 순간에야 비로소 모습을 드러낸 것처럼." },
+                    { speaker: "narrator", expression: "default", text: "나는 손에 쥔 전단지를 다시 바라보았다." },
+                    { speaker: "narrator", expression: "default", text: "그리고 어쩌면, 이 전단지가 나를 이곳으로 이끌어온 것은 아닐까 하고 생각했다." }
+                ],
+                nextScene: "scene_cafe_enter"
+            },
+            "scene_cafe_enter": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "protagonist", expression: "default", text: "조심스럽게 문을 열고 안으로 들어섰다." },
+                    { speaker: "god_cafe_owner", expression: "smile", text: "어서 오렴. 기다리고 있었단다." }
+                ],
+                choices: [
+                    { text: "여기가 직원 구인한다던 그 카페인가요?", nextScene: "scene_choice_a" },
+                    { text: "직원 구인 건으로 찾아왔습니다.", nextScene: "scene_choice_b" }
+                ]
+            },
+            "scene_choice_a": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "그렇단다. 손님은 제법 찾아왔지만, 직원으로 일해보겠다고 찾아온 사람은 처음이구나." },
+                    { speaker: "god_cafe_owner", expression: "default", text: "그렇다고 벌써부터 자네를 직원으로 받아들였다는 뜻은 아니란다. 우선 이야기를 좀 나눠보자꾸나." }
+                ],
+                nextScene: "interview_q1"
+            },
+            "scene_choice_b": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "허허, 일할 생각으로 찾아온 모양이구나." },
+                    { speaker: "god_cafe_owner", expression: "default", text: "좋다. 그렇다면 찾아온 용기는 충분히 확인했으니, 이제 정말 이곳에서 일할 수 있는 사람인지 알아보도록 하겠단다." }
+                ],
+                nextScene: "interview_q1"
+            },
+
+            // 1. 타인의 문제를 대신 해결하려는 성향 확인
+            "interview_q1": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "누군가 아주 힘들어하고 있단다. 자네라면 그 사람의 문제를 대신 해결해주겠느냐?" }
+                ],
+                choices: [
+                    { text: "제가 해결할 수 있다면 도와주고 싶어요.", nextScene: "interview_q2" },
+                    { text: "제가 대신 해결할 수 있는 문제는 아니라고 생각해요.", nextScene: "interview_q2" }
+                ]
+            },
+
+            // 2. 공감 방식 확인
+            "interview_q2": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "누군가 울고 있구나. 무슨 일이냐고 묻겠느냐, 아니면 조용히 곁에 있겠느냐?" }
+                ],
+                choices: [
+                    { text: "무슨 일이 있었는지 물어볼래요.", nextScene: "interview_q3" },
+                    { text: "말하고 싶을 때까지 기다릴래요.", nextScene: "interview_q3" }
+                ]
+            },
+
+            // 3. 섣부른 판단 여부
+            "interview_q3": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 자네에게 화를 냈단다. 그런데 그 이유가 전혀 이해되지 않는다면?" }
+                ],
+                choices: [
+                    { text: "그래도 왜 화가 났는지는 들어볼 것 같아요.", nextScene: "interview_q4" },
+                    { text: "이유가 납득되지 않는다면 굳이 이해하려 하지 않을 것 같아요.", nextScene: "interview_q4" }
+                ]
+            },
+
+            // 4. 충고 욕구 확인
+            "interview_q4": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네에게 조언을 구한 사람이 있단다. 하지만 자네라면 그 사람과 전혀 다른 선택을 할 것 같구나. 뭐라고 말하겠느냐?" }
+                ],
+                choices: [
+                    { text: "제가 생각하는 방법을 알려줄래요.", nextScene: "interview_q5" },
+                    { text: "그 사람이라면 어떤 선택을 하고 싶은지 먼저 물어볼래요.", nextScene: "interview_q5" }
+                ]
+            },
+
+            // 5. 인간의 변화에 대한 관점
+            "interview_q5": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "사람은 변할 수 있다고 생각하느냐?" }
+                ],
+                choices: [
+                    { text: "변할 수 있다고 생각해요.", nextScene: "interview_q6" },
+                    { text: "변하지 않는 부분도 있다고 생각해요.", nextScene: "interview_q6" }
+                ]
+            },
+
+            // 6. 실패한 사람을 바라보는 태도
+            "interview_q6": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "열 번을 시도하고 열 번을 실패한 사람이 있단다. 자네라면 뭐라고 하겠느냐?" }
+                ],
+                choices: [
+                    { text: "한 번 더 해보라고 말할래요.", nextScene: "interview_q7" },
+                    { text: "이제 그만해도 괜찮다고 말할래요.", nextScene: "interview_q7" }
+                ]
+            },
+
+            // 7. 회복의 강요 여부
+            "interview_q7": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 아직 괜찮아지지 않았단다. 그런데 내일이면 다시 일상으로 돌아가야 한다면?" }
+                ],
+                choices: [
+                    { text: "힘내서 다시 일어나야 한다고 말할래요.", nextScene: "interview_q8" },
+                    { text: "아직 괜찮지 않아도 괜찮다고 말할래요.", nextScene: "interview_q8" }
+                ]
+            },
+
+            // 8. 손님의 선택 존중
+            "interview_q8": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네가 보기에는 분명 잘못된 선택을 하려는 손님이 있단다. 말리겠느냐?" }
+                ],
+                choices: [
+                    { text: "후회하기 전에 말려야 한다고 생각해요.", nextScene: "interview_q9" },
+                    { text: "그 사람의 선택이라면 지켜봐야 한다고 생각해요.", nextScene: "interview_q9" }
+                ]
+            },
+
+            // 9. 정답이 없는 문제에 대한 태도
+            "interview_q9": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "어떤 고민에는 정답이 없단다. 그럼에도 답을 내놓으라 한다면?" }
+                ],
+                choices: [
+                    { text: "제가 생각하는 답이라도 이야기할게요.", nextScene: "interview_q10" },
+                    { text: "정답이 없다고 솔직하게 말할게요.", nextScene: "interview_q10" }
+                ]
+            },
+
+            // 10. 타인의 고통을 함부로 이해하지 않는지
+            "interview_q10": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "누군가 '내 마음을 아무도 이해하지 못한다'고 말한다면?" }
+                ],
+                choices: [
+                    { text: "저도 비슷한 경험이 있었다고 이야기할래요.", nextScene: "interview_q11" },
+                    { text: "그 마음을 제가 완전히 이해할 수는 없다고 말할래요.", nextScene: "interview_q11" }
+                ]
+            },
+
+            // 11. 비밀을 지킬 수 있는지
+            "interview_q11": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 아무에게도 말하지 말아달라고 부탁한 이야기가 있단다." }
+                ],
+                choices: [
+                    { text: "약속한 이상 지켜야죠.", nextScene: "interview_q12" },
+                    { text: "상황에 따라 다른 사람에게 알려야 할 수도 있어요.", nextScene: "interview_q12" }
+                ]
+            },
+
+            // 12. 손님에게 지나치게 개입하는지
+            "interview_q12": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 떠나려 하는데, 자네는 그 사람이 아직 카페를 떠날 준비가 되지 않았다고 생각한다면?" }
+                ],
+                choices: [
+                    { text: "조금 더 이야기를 나눠볼 것 같아요.", nextScene: "interview_q13" },
+                    { text: "떠나고 싶다면 보내줘야 한다고 생각해요.", nextScene: "interview_q13" }
+                ]
+            },
+
+            // 13. 카페의 존재 이유
+            "interview_q13": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네가 생각하기에 이 카페는 무엇을 하는 곳일까?" }
+                ],
+                choices: [
+                    { text: "사람들의 고민을 해결해주는 곳 아닐까요?", nextScene: "interview_q14" },
+                    { text: "사람들이 스스로 해결할 수 있도록 잠시 쉬어가는 곳 아닐까요?", nextScene: "interview_q14" }
+                ]
+            },
+
+            // 14. 핵심 철학을 직접적으로 확인
+            "interview_q14": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 다시는 이 카페에 찾아오지 않는다면, 자네는 섭섭하겠느냐?" }
+                ],
+                choices: [
+                    { text: "조금은 섭섭할 것 같아요.", nextScene: "interview_q15" },
+                    { text: "그 사람이 더 이상 이곳을 필요로 하지 않는다면 기쁠 것 같아요.", nextScene: "interview_q15" }
+                ]
+            },
+
+            // 15. 직원 자신의 감정 관리
+            "interview_q15": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님의 이야기를 듣다 보면 자네까지 마음이 아플 수도 있단다. 그럴 땐 어찌하겠느냐?" }
+                ],
+                choices: [
+                    { text: "그래도 끝까지 들어주겠습니다.", nextScene: "interview_q16" },
+                    { text: "저 역시 잠시 쉬어야 할 것 같아요.", nextScene: "interview_q16" }
+                ]
+            },
+
+            // 16. 사람을 구원하려는 태도 확인
+            "interview_q16": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네에게 아주 중요한 질문을 하나 하지. 사람을 구원하는 것은 누구의 몫이라고 생각하느냐?" }
+                ],
+                choices: [
+                    { text: "도와주는 사람이 함께 해야 한다고 생각해요.", nextScene: "ending_first_step" },
+                    { text: "결국 자신의 삶은 자신이 살아가야 한다고 생각해요.", nextScene: "ending_first_step" }
+                ]
+            }
+        };
+
+        const ENDINGS = {
+            "ending_first_step": {
+                id: "ending_first_step",
+                title: "엔딩: 신의 휴식처의 직원",
+                description: "모든 마음가짐 문항에 답하며 카페의 일원이 될 자격을 증명했다."
+            }
+        };
+
+        /* ==========================================================================
+           [게임 시스템 코어 엔진 영역]
+           ========================================================================== */
+
+        let currentUser = null;
+        let currentGameState = {
+            currentSceneId: "scene_prologue_1",
+            currentEpisodeId: "prologue",
+            dialogueIndex: 0,
+            unlockedEndings: [],
+            history: []
+        };
+
+        let gameSettings = {
+            textSpeed: 30,
+            bgmVolume: 50,
+            sfxVolume: 50,
+            autoPlay: false
+        };
+
+        let autoPlayTimer = null;
+
+        function handleLogin() {
+            const input = document.getElementById("username-input").value.trim();
+            if (!input) {
+                showToast("이름을 입력해주세요.");
+                return;
+            }
+            currentUser = input;
+            document.getElementById("current-user-badge").innerText = `계정: ${currentUser}`;
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("title-screen").classList.remove("hidden");
+            loadProgressFromStorage();
+        }
+
+        function startGame() {
+            currentGameState = {
+                currentSceneId: EPISODES["prologue"].startScene,
+                currentEpisodeId: "prologue",
+                dialogueIndex: 0,
+                unlockedEndings: currentGameState.unlockedEndings || [],
+                history: []
+            };
+            enterScene(currentGameState.currentSceneId);
+        }
+
+        function enterScene(sceneId) {
+            const scene = SCENES[sceneId];
+            if (!scene) {
+                showToast("존재하지 않는 장면 ID입니다: " + sceneId);
+                return;
+            }
+
+            if (ENDINGS[sceneId]) {
+                triggerEnding(sceneId);
+                return;
+            }
+
+            currentGameState.currentSceneId = sceneId;
+            currentGameState.currentEpisodeId = scene.episode || "prologue";
+            currentGameState.dialogueIndex = 0;
+
+            document.getElementById("title-screen").classList.add("hidden");
+            document.getElementById("game-screen").classList.remove("hidden");
+            document.getElementById("choices-container").classList.add("hidden");
+
+            const bgUrl = BACKGROUNDS[scene.background] || BACKGROUNDS["cafe_interior"];
+            document.getElementById("game-screen").style.backgroundImage = `url('${bgUrl}')`;
+
+            const epInfo = EPISODES[currentGameState.currentEpisodeId];
+            document.getElementById("ui-episode-name").innerText = epInfo ? epInfo.name : "스토리";
+            document.getElementById("ui-scene-id").innerText = sceneId;
+
+            renderCurrentDialogue();
+            autoSaveGame();
+        }
+
+        function renderCurrentDialogue() {
+            const scene = SCENES[currentGameState.currentSceneId];
+            if (!scene) return;
+
+            const dialogues = scene.dialogues;
+            const idx = currentGameState.dialogueIndex;
+
+            if (idx >= dialogues.length) {
+                if (scene.choices && scene.choices.length > 0) {
+                    showChoices(scene.choices);
+                } else if (scene.nextScene) {
+                    enterScene(scene.nextScene);
+                } else {
+                    showToast("스토리의 끝입니다.");
+                }
+                return;
+            }
+
+            const currentDlg = dialogues[idx];
+            const charInfo = CHARACTERS[currentDlg.speaker];
+            const speakerName = charInfo ? charInfo.name : currentDlg.speaker;
+            
+            const speakerBadge = document.getElementById("speaker-name");
+            if (currentDlg.speaker === "narrator") {
+                speakerBadge.style.display = "none";
+            } else {
+                speakerBadge.style.display = "block";
+                speakerBadge.innerText = speakerName;
+            }
+
+            renderCharacters(currentDlg.speaker, currentDlg.expression);
+
+            document.getElementById("dialogue-text").innerText = currentDlg.text;
+            currentGameState.history.push({
+                speaker: speakerName,
+                text: currentDlg.text
+            });
+        }
+
+        function renderCharacters(activeSpeakerKey, expressionKey) {
+            const container = document.getElementById("character-container");
+            container.innerHTML = "";
+
+            if (activeSpeakerKey === "narrator" || !CHARACTERS[activeSpeakerKey] || CHARACTERS[activeSpeakerKey].position === "none") {
+                return;
+            }
+
+            for (let key in CHARACTERS) {
+                if (key === activeSpeakerKey) {
+                    const charData = CHARACTERS[key];
+                    const imgUrl = charData.expressions[expressionKey] || charData.expressions["default"];
+                    if (!imgUrl) continue;
+                    
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "flex flex-col items-center transition-all duration-300 transform scale-105 filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]";
+                    wrapper.innerHTML = `
+                        <img src="${imgUrl}" alt="${charData.name}" class="h-96 object-contain rounded-lg border-b-4 border-indigo-500" onerror="this.src='https://placehold.co/300x600/333/fff?text=No+Image'">
+                    `;
+                    container.appendChild(wrapper);
+                }
+            }
+        }
+
+        function handleNextClick() {
+            const scene = SCENES[currentGameState.currentSceneId];
+            if (!scene) return;
+
+            if (currentGameState.dialogueIndex < scene.dialogues.length - 1) {
+                currentGameState.dialogueIndex++;
+                renderCurrentDialogue();
+            } else {
+                if (scene.choices && scene.choices.length > 0) {
+                    showChoices(scene.choices);
+                } else if (scene.nextScene) {
+                    enterScene(scene.nextScene);
+                }
+            }
+        }
+
+        function showChoices(choices) {
+            const container = document.getElementById("choices-container");
+            container.innerHTML = `
+                <h3 class="text-xl font-bold mb-4 text-indigo-300">원하는 답변을 선택하세요</h3>
+                <div class="flex flex-col gap-3 w-full max-w-lg" id="choices-list"></div>
+            `;
+            const list = document.getElementById("choices-list");
+
+            choices.forEach(choice => {
+                const btn = document.createElement("button");
+                btn.className = "py-4 px-6 bg-gray-800 hover:bg-indigo-600 border border-gray-600 rounded-xl text-left font-bold transition shadow-lg text-white text-base";
+                btn.innerText = choice.text;
+                btn.onclick = () => {
+                    container.classList.add("hidden");
+                    enterScene(choice.nextScene);
+                };
+                list.appendChild(btn);
+            });
+
+            container.classList.remove("hidden");
+        }
+
+        function triggerEnding(endingId) {
+            const ending = ENDINGS[endingId];
+            if (!ending) return;
+
+            if (!currentGameState.unlockedEndings.includes(endingId)) {
+                currentGameState.unlockedEndings.push(endingId);
+            }
+
+            document.getElementById("game-screen").classList.add("hidden");
+            document.getElementById("title-screen").classList.remove("hidden");
+            showToast(`[엔딩 도달] ${ending.title}`);
+            autoSaveGame();
+        }
+
+        function toggleAutoPlay() {
+            gameSettings.autoPlay = !gameSettings.autoPlay;
+            const btn = document.getElementById("auto-btn");
+            if (gameSettings.autoPlay) {
+                btn.innerText = "자동: 켜짐";
+                btn.classList.add("bg-indigo-600");
+                startAutoPlayLoop();
+            } else {
+                btn.innerText = "자동: 꺼짐";
+                btn.classList.remove("bg-indigo-600");
+                clearInterval(autoPlayTimer);
+            }
+        }
+
+        function startAutoPlayLoop() {
+            if (autoPlayTimer) clearInterval(autoPlayTimer);
+            autoPlayTimer = setInterval(() => {
+                if (gameSettings.autoPlay) {
+                    const scene = SCENES[currentGameState.currentSceneId];
+                    if (scene && currentGameState.dialogueIndex < scene.dialogues.length - 1) {
+                        handleNextClick();
+                    }
+                }
+            }, 3500);
+        }
+
+        function getStorageKey() {
+            return `visual_novel_save_${currentUser || 'default'}`;
+        }
+
+        function autoSaveGame() {
+            if (!currentUser) return;
+            const saveData = {
+                state: currentGameState,
+                timestamp: new Date().toLocaleString()
+            };
+            localStorage.setItem(getStorageKey() + "_auto", JSON.stringify(saveData));
+        }
+
+        function manualSave(slotIndex) {
+            if (!currentUser) return;
+            const saveData = {
+                state: currentGameState,
+                timestamp: new Date().toLocaleString()
+            };
+            localStorage.setItem(getStorageKey() + `_slot_${slotIndex}`, JSON.stringify(saveData));
+            showToast(`슬롯 ${slotIndex}에 저장되었습니다.`);
+            openSaveModal();
+        }
+
+        function loadGameSlot(slotKey) {
+            const saved = localStorage.getItem(slotKey);
+            if (!saved) {
+                showToast("저장된 데이터가 없습니다.");
+                return;
+            }
+            const data = JSON.parse(saved);
+            currentGameState = data.state;
+            document.getElementById("modal-overlay").classList.add("hidden");
+            enterScene(currentGameState.currentSceneId);
+            showToast("게임을 불러왔습니다.");
+        }
+
+        function loadProgressFromStorage() {
+            if (!currentUser) return;
+            const autoSaved = localStorage.getItem(getStorageKey() + "_auto");
+            if (autoSaved) {
+                try {
+                    const data = JSON.parse(autoSaved);
+                    if (data && data.state) {
+                        currentGameState.unlockedEndings = data.state.unlockedEndings || [];
+                    }
+                } catch(e) {}
+            }
+        }
+
+        function openSaveModal() {
+            const modal = document.getElementById("modal-overlay");
+            const content = document.getElementById("modal-content");
+            
+            let slotsHtml = "";
+            for (let i = 1; i <= 3; i++) {
+                const slotKey = getStorageKey() + `_slot_${i}`;
+                const data = localStorage.getItem(slotKey);
+                let info = "빈 슬롯";
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        info = `저장 시간: ${parsed.timestamp} (장면: ${parsed.state.currentSceneId})`;
+                    } catch(e) {}
+                }
+                slotsHtml += `
+                    <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <div>
+                            <span class="font-bold text-indigo-400">슬롯 ${i}</span>
+                            <p class="text-xs text-gray-400">${info}</p>
+                        </div>
+                        <button onclick="manualSave(${i})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-sm font-bold rounded-lg transition">저장하기</button>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">게임 저장</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white font-bold">✕ 닫기</button>
+                </div>
+                <div class="flex flex-col gap-3 overflow-y-auto flex-1 pr-1">${slotsHtml}</div>
+            `;
+            modal.classList.remove("hidden");
+        }
+
+        function openLoadModal() {
+            const modal = document.getElementById("modal-overlay");
+            const content = document.getElementById("modal-content");
+            
+            let slotsHtml = "";
+            const autoKey = getStorageKey() + "_auto";
+            const autoData = localStorage.getItem(autoKey);
+            let autoInfo = "기록 없음";
+            if (autoData) {
+                try {
+                    const parsed = JSON.parse(autoData);
+                    autoInfo = `자동저장: ${parsed.timestamp} (${parsed.state.currentSceneId})`;
+                } catch(e) {}
+            }
+            slotsHtml += `
+                <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <div>
+                        <span class="font-bold text-green-400">자동 저장 파일</span>
+                        <p class="text-xs text-gray-400">${autoInfo}</p>
+                    </div>
+                    <button onclick="loadGameSlot('${autoKey}')" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-sm font-bold rounded-lg transition" ${!autoData?'disabled':''}>불러오기</button>
+                </div>
+            `;
+
+            for (let i = 1; i <= 3; i++) {
+                const slotKey = getStorageKey() + `_slot_${i}`;
+                const data = localStorage.getItem(slotKey);
+                let info = "빈 슬롯";
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        info = `저장 시간: ${parsed.timestamp} (장면: ${parsed.state.currentSceneId})`;
+                    } catch(e) {}
+                }
+                slotsHtml += `
+                    <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <div>
+                            <span class="font-bold text-indigo-400">슬롯 ${i}</span>
+                            <p class="text-xs text-gray-400">${info}</p>
+                        </div>
+                        <button onclick="loadGameSlot('${slotKey}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-sm font-bold rounded-lg transition" ${!data?'disabled':''}>불러오기</button>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">게임 불러오기</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white font-bold">✕ 닫기</button>
+                </div>
+                <div class="flex flex-col gap-3 overflow-y-auto flex-1 pr-1">${slotsHtml}</div>
+            `;
+            modal.classList.remove("hidden");
+        }
+
+        function openLogModal() {
+            const modal = document.getElementById("modal-overlay");
+            const content = document.getElementById("modal-content");
+
+            let logsHtml = currentGameState.history.map(item => `
+                <div class="border-b border-gray-800 pb-3">
+                    <span class="text-xs font-bold text-indigo-400">${item.speaker}</span>
+                    <p class="text-sm text-gray-200 mt-1">${item.text}</p>
+                </div>
+            `).join("");
+
+            if (!logsHtml) logsHtml = "<p class='text-gray-500 text-center py-8'>대화 기록이 없습니다.</p>";
+
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">대화 로그</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white font-bold">✕ 닫기</button>
+                </div>
+                <div class="flex flex-col gap-4 overflow-y-auto flex-1 pr-2 bg-gray-950 p-4 rounded-xl">${logsHtml}</div>
+            `;
+            modal.classList.remove("hidden");
+        }
+
+        function openSettingsModal() {
+            const modal = document.getElementById("modal-overlay");
+            const content = document.getElementById("modal-content");
+
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">설정</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white font-bold">✕ 닫기</button>
+                </div>
+                <div class="flex flex-col gap-6 py-4">
+                    <div>
+                        <label class="text-sm text-gray-300 block mb-2">대사 출력 속도</label>
+                        <input type="range" min="10" max="100" value="${gameSettings.textSpeed}" onchange="gameSettings.textSpeed=this.value" class="w-full accent-indigo-600">
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-300 block mb-2">배경음악 (BGM)</label>
+                        <input type="range" min="0" max="100" value="${gameSettings.bgmVolume}" onchange="gameSettings.bgmVolume=this.value" class="w-full accent-indigo-600">
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-300 block mb-2">효과음 (SFX)</label>
+                        <input type="range" min="0" max="100" value="${gameSettings.sfxVolume}" onchange="gameSettings.sfxVolume=this.value" class="w-full accent-indigo-600">
+                    </div>
+                </div>
+            `;
+            modal.classList.add("flex");
+            modal.classList.remove("hidden");
+        }
+
+        function openEndingGallery() {
+            const modal = document.getElementById("modal-overlay");
+            const content = document.getElementById("modal-content");
+
+            let galleryHtml = "";
+            for (let key in ENDINGS) {
+                const ending = ENDINGS[key];
+                const isUnlocked = currentGameState.unlockedEndings.includes(key);
+                galleryHtml += `
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs ${isUnlocked ? 'text-green-400' : 'text-gray-500'} font-bold">${isUnlocked ? '✓ 해금 완료' : '🔒 잠김'}</span>
+                            <h3 class="font-bold text-lg text-white mt-1">${isUnlocked ? ending.title : '??? (미해금 엔딩)'}</h3>
+                            <p class="text-xs text-gray-400 mt-2">${isUnlocked ? ending.description : '조건을 달성하여 엔딩을 확인하세요.'}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">엔딩 갤러리</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white font-bold">✕ 닫기</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto flex-1 pr-1">${galleryHtml}</div>
+            `;
+            modal.classList.remove("hidden");
+        }
+
+        function closeModal() {
+            document.getElementById("modal-overlay").classList.add("hidden");
+        }
+
+        function returnToTitle() {
+            document.getElementById("game-screen").classList.add("hidden");
+            document.getElementById("title-screen").classList.remove("hidden");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("message-box");
+            toast.innerText = msg;
+            toast.style.opacity = "1";
+            setTimeout(() => {
+                toast.style.opacity = "0";
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
