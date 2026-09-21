@@ -119,23 +119,19 @@
     <script>
         /* ==========================================================================
            [콘텐츠 데이터 관리 영역] 
-           사용자가 직접 수정, 추가, 확장할 수 있는 독립적 설정 영역입니다.
            ========================================================================== */
 
-        // 1. 에피소드 정의
         const EPISODES = {
             "prologue": { id: "prologue", name: "프롤로그: 전단지와 빛", startScene: "scene_prologue_1" },
             "episode_1": { id: "episode_1", name: "에피소드 1: 카페의 문을 열며", startScene: "scene_cafe_enter" }
         };
 
-        // 2. 배경 이미지 정의 (assets/backgrounds/ 경로 구조 반영)
         const BACKGROUNDS = {
             "street_pole": "https://placehold.co/1200x800/1e293b/94a3b8?text=Street+-+Pole+with+Flyer",
             "street_night": "https://placehold.co/1200x800/0f172a/64748b?text=Street+-+Crossroad+Light",
             "cafe_interior": "https://placehold.co/1200x800/1a202c/cbd5e0?text=Cafe+Interior"
         };
 
-        // 3. 캐릭터 정의 (assets/characters/ 경로 구조 반영)
         const CHARACTERS = {
             "narrator": {
                 name: "독백 / 해설",
@@ -160,7 +156,7 @@
             }
         };
 
-        // 4. 스토리 장면(Scene) 및 대화 데이터 
+        // 전체 확장된 면접 및 의도 확인 씬 구조 데이터
         const SCENES = {
             "scene_prologue_1": {
                 episode: "prologue",
@@ -181,7 +177,7 @@
             },
             "scene_prologue_2": {
                 episode: "prologue",
-                background: "street_night", // 사진 변경 연출
+                background: "street_night",
                 dialogues: [
                     { speaker: "narrator", expression: "default", text: "어느날은 문득 호기심이 들었다. 혹시 전단지의 뒷면에 무언가 남아 있지는 않을까?" },
                     { speaker: "narrator", expression: "default", text: "나는 전단지를 벽에서 떼어냈다. 그리고 그 순간이었다." },
@@ -210,29 +206,234 @@
                 background: "cafe_interior",
                 dialogues: [
                     { speaker: "god_cafe_owner", expression: "default", text: "그렇단다. 손님은 제법 찾아왔지만, 직원으로 일해보겠다고 찾아온 사람은 처음이구나." },
-
-                    { speaker: "god_cafe_owner", expression: "default", text: "그렇다고 벌써부터 자네를 직원으로 받아들였다는 뜻은 아니란다. 우선 이야기를 좀 나눠보자꾸나." },
+                    { speaker: "god_cafe_owner", expression: "default", text: "그렇다고 벌써부터 자네를 직원으로 받아들였다는 뜻은 아니란다. 우선 이야기를 좀 나눠보자꾸나." }
                 ],
-                nextScene: "ending_first_step"
+                nextScene: "interview_q1"
             },
             "scene_choice_b": {
                 episode: "episode_1",
                 background: "cafe_interior",
                 dialogues: [
                     { speaker: "god_cafe_owner", expression: "default", text: "허허, 일할 생각으로 찾아온 모양이구나." },
-
-                    { speaker: "god_cafe_owner", expression: "default", text: "좋다. 그렇다면 찾아온 용기는 충분히 확인했으니, 이제 정말 이곳에서 일할 수 있는 사람인지 알아보도록 하겠단다." },
+                    { speaker: "god_cafe_owner", expression: "default", text: "좋다. 그렇다면 찾아온 용기는 충분히 확인했으니, 이제 정말 이곳에서 일할 수 있는 사람인지 알아보도록 하겠단다." }
                 ],
-                nextScene: "ending_first_step"
+                nextScene: "interview_q1"
+            },
+
+            // 1. 타인의 문제를 대신 해결하려는 성향 확인
+            "interview_q1": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "누군가 아주 힘들어하고 있단다. 자네라면 그 사람의 문제를 대신 해결해주겠느냐?" }
+                ],
+                choices: [
+                    { text: "제가 해결할 수 있다면 도와주고 싶어요.", nextScene: "interview_q2" },
+                    { text: "제가 대신 해결할 수 있는 문제는 아니라고 생각해요.", nextScene: "interview_q2" }
+                ]
+            },
+
+            // 2. 공감 방식 확인
+            "interview_q2": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "누군가 울고 있구나. 무슨 일이냐고 묻겠느냐, 아니면 조용히 곁에 있겠느냐?" }
+                ],
+                choices: [
+                    { text: "무슨 일이 있었는지 물어볼래요.", nextScene: "interview_q3" },
+                    { text: "말하고 싶을 때까지 기다릴래요.", nextScene: "interview_q3" }
+                ]
+            },
+
+            // 3. 섣부른 판단 여부
+            "interview_q3": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 자네에게 화를 냈단다. 그런데 그 이유가 전혀 이해되지 않는다면?" }
+                ],
+                choices: [
+                    { text: "그래도 왜 화가 났는지는 들어볼 것 같아요.", nextScene: "interview_q4" },
+                    { text: "이유가 납득되지 않는다면 굳이 이해하려 하지 않을 것 같아요.", nextScene: "interview_q4" }
+                ]
+            },
+
+            // 4. 충고 욕구 확인
+            "interview_q4": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네에게 조언을 구한 사람이 있단다. 하지만 자네라면 그 사람과 전혀 다른 선택을 할 것 같구나. 뭐라고 말하겠느냐?" }
+                ],
+                choices: [
+                    { text: "제가 생각하는 방법을 알려줄래요.", nextScene: "interview_q5" },
+                    { text: "그 사람이라면 어떤 선택을 하고 싶은지 먼저 물어볼래요.", nextScene: "interview_q5" }
+                ]
+            },
+
+            // 5. 인간의 변화에 대한 관점
+            "interview_q5": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "사람은 변할 수 있다고 생각하느냐?" }
+                ],
+                choices: [
+                    { text: "변할 수 있다고 생각해요.", nextScene: "interview_q6" },
+                    { text: "변하지 않는 부분도 있다고 생각해요.", nextScene: "interview_q6" }
+                ]
+            },
+
+            // 6. 실패한 사람을 바라보는 태도
+            "interview_q6": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "열 번을 시도하고 열 번을 실패한 사람이 있단다. 자네라면 뭐라고 하겠느냐?" }
+                ],
+                choices: [
+                    { text: "한 번 더 해보라고 말할래요.", nextScene: "interview_q7" },
+                    { text: "이제 그만해도 괜찮다고 말할래요.", nextScene: "interview_q7" }
+                ]
+            },
+
+            // 7. 회복의 강요 여부
+            "interview_q7": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 아직 괜찮아지지 않았단다. 그런데 내일이면 다시 일상으로 돌아가야 한다면?" }
+                ],
+                choices: [
+                    { text: "힘내서 다시 일어나야 한다고 말할래요.", nextScene: "interview_q8" },
+                    { text: "아직 괜찮지 않아도 괜찮다고 말할래요.", nextScene: "interview_q8" }
+                ]
+            },
+
+            // 8. 손님의 선택 존중
+            "interview_q8": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네가 보기에는 분명 잘못된 선택을 하려는 손님이 있단다. 말리겠느냐?" }
+                ],
+                choices: [
+                    { text: "후회하기 전에 말려야 한다고 생각해요.", nextScene: "interview_q9" },
+                    { text: "그 사람의 선택이라면 지켜봐야 한다고 생각해요.", nextScene: "interview_q9" }
+                ]
+            },
+
+            // 9. 정답이 없는 문제에 대한 태도
+            "interview_q9": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "어떤 고민에는 정답이 없단다. 그럼에도 답을 내놓으라 한다면?" }
+                ],
+                choices: [
+                    { text: "제가 생각하는 답이라도 이야기할게요.", nextScene: "interview_q10" },
+                    { text: "정답이 없다고 솔직하게 말할게요.", nextScene: "interview_q10" }
+                ]
+            },
+
+            // 10. 타인의 고통을 함부로 이해하지 않는지
+            "interview_q10": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "누군가 '내 마음을 아무도 이해하지 못한다'고 말한다면?" }
+                ],
+                choices: [
+                    { text: "저도 비슷한 경험이 있었다고 이야기할래요.", nextScene: "interview_q11" },
+                    { text: "그 마음을 제가 완전히 이해할 수는 없다고 말할래요.", nextScene: "interview_q11" }
+                ]
+            },
+
+            // 11. 비밀을 지킬 수 있는지
+            "interview_q11": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 아무에게도 말하지 말아달라고 부탁한 이야기가 있단다." }
+                ],
+                choices: [
+                    { text: "약속한 이상 지켜야죠.", nextScene: "interview_q12" },
+                    { text: "상황에 따라 다른 사람에게 알려야 할 수도 있어요.", nextScene: "interview_q12" }
+                ]
+            },
+
+            // 12. 손님에게 지나치게 개입하는지
+            "interview_q12": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 떠나려 하는데, 자네는 그 사람이 아직 카페를 떠날 준비가 되지 않았다고 생각한다면?" }
+                ],
+                choices: [
+                    { text: "조금 더 이야기를 나눠볼 것 같아요.", nextScene: "interview_q13" },
+                    { text: "떠나고 싶다면 보내줘야 한다고 생각해요.", nextScene: "interview_q13" }
+                ]
+            },
+
+            // 13. 카페의 존재 이유
+            "interview_q13": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네가 생각하기에 이 카페는 무엇을 하는 곳일까?" }
+                ],
+                choices: [
+                    { text: "사람들의 고민을 해결해주는 곳 아닐까요?", nextScene: "interview_q14" },
+                    { text: "사람들이 스스로 해결할 수 있도록 잠시 쉬어가는 곳 아닐까요?", nextScene: "interview_q14" }
+                ]
+            },
+
+            // 14. 핵심 철학을 직접적으로 확인
+            "interview_q14": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님이 다시는 이 카페에 찾아오지 않는다면, 자네는 섭섭하겠느냐?" }
+                ],
+                choices: [
+                    { text: "조금은 섭섭할 것 같아요.", nextScene: "interview_q15" },
+                    { text: "그 사람이 더 이상 이곳을 필요로 하지 않는다면 기쁠 것 같아요.", nextScene: "interview_q15" }
+                ]
+            },
+
+            // 15. 직원 자신의 감정 관리
+            "interview_q15": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "손님의 이야기를 듣다 보면 자네까지 마음이 아플 수도 있단다. 그럴 땐 어찌하겠느냐?" }
+                ],
+                choices: [
+                    { text: "그래도 끝까지 들어주겠습니다.", nextScene: "interview_q16" },
+                    { text: "저 역시 잠시 쉬어야 할 것 같아요.", nextScene: "interview_q16" }
+                ]
+            },
+
+            // 16. 사람을 구원하려는 태도 확인
+            "interview_q16": {
+                episode: "episode_1",
+                background: "cafe_interior",
+                dialogues: [
+                    { speaker: "god_cafe_owner", expression: "default", text: "자네에게 아주 중요한 질문을 하나 하지. 사람을 구원하는 것은 누구의 몫이라고 생각하느냐?" }
+                ],
+                choices: [
+                    { text: "도와주는 사람이 함께 해야 한다고 생각해요.", nextScene: "ending_first_step" },
+                    { text: "결국 자신의 삶은 자신이 살아가야 한다고 생각해요.", nextScene: "ending_first_step" }
+                ]
             }
         };
 
-        // 5. 엔딩 정의
         const ENDINGS = {
             "ending_first_step": {
                 id: "ending_first_step",
-                title: "엔딩 1: 신비로운 만남의 시작",
-                description: "전단지에 이끌려 신의 카페에 첫발을 내디뎠다."
+                title: "엔딩: 신의 휴식처의 직원",
+                description: "모든 마음가짐 문항에 답하며 카페의 일원이 될 자격을 증명했다."
             }
         };
 
@@ -395,14 +596,14 @@
         function showChoices(choices) {
             const container = document.getElementById("choices-container");
             container.innerHTML = `
-                <h3 class="text-xl font-bold mb-4 text-indigo-300">원하는 행동을 선택하세요</h3>
-                <div class="flex flex-col gap-3 w-full max-w-md" id="choices-list"></div>
+                <h3 class="text-xl font-bold mb-4 text-indigo-300">원하는 답변을 선택하세요</h3>
+                <div class="flex flex-col gap-3 w-full max-w-lg" id="choices-list"></div>
             `;
             const list = document.getElementById("choices-list");
 
             choices.forEach(choice => {
                 const btn = document.createElement("button");
-                btn.className = "py-4 px-6 bg-gray-800 hover:bg-indigo-600 border border-gray-600 rounded-xl text-left font-bold transition shadow-lg text-white text-lg";
+                btn.className = "py-4 px-6 bg-gray-800 hover:bg-indigo-600 border border-gray-600 rounded-xl text-left font-bold transition shadow-lg text-white text-base";
                 btn.innerText = choice.text;
                 btn.onclick = () => {
                     container.classList.add("hidden");
@@ -642,6 +843,7 @@
                     </div>
                 </div>
             `;
+            modal.classList.add("flex");
             modal.classList.remove("hidden");
         }
 
